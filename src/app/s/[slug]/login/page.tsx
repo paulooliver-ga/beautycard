@@ -1,10 +1,8 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
 export default function LoginPage({ params }: { params: { slug: string } }) {
-  const router = useRouter();
   const { slug } = params;
   const [mode, setMode] = useState<"login" | "register">("login");
   const [loading, setLoading] = useState(false);
@@ -20,12 +18,14 @@ export default function LoginPage({ params }: { params: { slug: string } }) {
         body: JSON.stringify({ ...form, slug }),
       });
       const data = await res.json();
-      if (!res.ok) { toast.error(data.error || "Erro"); return; }
-      toast.success(mode === "login" ? "Bem-vinda! 💖" : "Conta criada! 💖");
-      if (data.role === "ADMIN") router.push(`/s/${slug}/admin`);
-      else router.push(`/s/${slug}/cartao`);
-    } catch { toast.error("Erro de conexão"); }
-    finally { setLoading(false); }
+      if (!res.ok) { toast.error(data.error || "Erro"); setLoading(false); return; }
+      toast.success("Bem-vinda! 💖");
+      if (data.role === "ADMIN") window.location.href = `/s/${slug}/admin`;
+      else window.location.href = `/s/${slug}/cartao`;
+    } catch {
+      toast.error("Erro de conexão");
+      setLoading(false);
+    }
   }
 
   return (
@@ -35,7 +35,6 @@ export default function LoginPage({ params }: { params: { slug: string } }) {
         <h1 className="text-2xl font-bold gold-text mt-3">BeautyCard</h1>
         <p className="text-sm mt-1" style={{ color: "rgba(212,175,55,0.5)" }}>Cartão Fidelidade Digital ✨</p>
       </div>
-
       <div className="w-full max-w-sm card">
         <div className="flex rounded-2xl p-1 mb-5" style={{ background: "rgba(212,175,55,0.08)" }}>
           {(["login", "register"] as const).map((m) => (
@@ -48,7 +47,6 @@ export default function LoginPage({ params }: { params: { slug: string } }) {
             </button>
           ))}
         </div>
-
         <form onSubmit={handleSubmit} className="space-y-4">
           {mode === "register" && (
             <div>
