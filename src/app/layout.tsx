@@ -1,19 +1,44 @@
-import type { Metadata } from "next";
-import { Toaster } from "react-hot-toast";
-import "./globals.css";
+import { getSession } from "@/lib/auth";
+import SalonBottomNav from "@/components/SalonBottomNav";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "BeautyCard — Fidelidade para Salões",
-  description: "Cartão fidelidade digital para salões de beleza",
-};
+export default async function SlugLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: { slug: string };
+}) {
+  const user = await getSession();
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+  if (!user) {
+    return <>{children}</>;
+  }
+
+  if (user.salon.slug !== params.slug) {
+    redirect(`/s/${user.salon.slug}/cartao`);
+  }
+
+  const isAdmin = user.role === "ADMIN";
+
   return (
-    <html lang="pt-BR">
-      <body>
-        {children}
-        <Toaster position="top-center" toastOptions={{ style: { borderRadius: "12px", background: "#1a1200", color: "#f5e6a3", border: "1px solid rgba(212,175,55,0.3)" } }} />
-      </body>
-    </html>
+    <div className="min-h-screen pb-24">
+      <header className="sticky top-0 z-50 border-b px-4 py-3"
+        style={{ background: "rgba(10,8,2,0.95)", borderColor: "rgba(212,175,55,0.25)", backdropFilter: "blur(10px)" }}>
+        <div className="max-w-lg mx-auto flex items-center justify-between">
+          <div>
+            <h1 className="font-bold gold-text text-base leading-tight">{user.salon.name}</h1>
+            <p className="text-xs" style={{ color: "rgba(212,175,55,0.4)" }}>
+              {isAdmin ? "Painel Admin" : `Olá, ${user.name.split(" ")[0]} ✨`}
+            </p>
+          </div>
+          <form action="/api/auth/logout" method="POST">
+            <button type="submit" className="text-xs" style={{ color: "rgba(212,175,55,0.4)" }}>Sair</button>
+          </form>
+        </div>
+      </header>
+      <main className="max-w-lg mx-auto px-4 py-6">{children}</main>
+      <SalonBottomNav slug={params.slug} isAdmin={isAdmin} whatsapp={user.salon.whatsapp} />
+    </div>
   );
 }
